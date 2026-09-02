@@ -99,6 +99,41 @@ int32_t Weapons::getMaxWeaponDamage(uint32_t level, int32_t attackSkill, int32_t
 	}
 }
 
+int32_t Weapons::getOldroadsWeaponDamage(
+	int32_t attackSkill,
+	int32_t attackValue,
+	FightMode_t fightMode,
+	int32_t roll
+) {
+	attackSkill = std::max<int32_t>(0, attackSkill);
+	int32_t adjustedAttack = std::max<int32_t>(0, attackValue);
+	roll = std::clamp(roll, 0, 99);
+
+	switch (fightMode) {
+		case FIGHTMODE_ATTACK:
+			// Full attack: 120%
+			adjustedAttack += (2 * adjustedAttack) / 10;
+			break;
+
+		case FIGHTMODE_DEFENSE:
+			// Full defense: 60%
+			adjustedAttack -= (4 * adjustedAttack) / 10;
+			break;
+
+		case FIGHTMODE_BALANCED:
+		default:
+			// Balanced: 100%
+			break;
+	}
+
+	const int64_t formula = static_cast<int64_t>(5 * attackSkill + 50) * adjustedAttack;
+
+	// Integer ceiling of (formula * roll) / 10000.
+	return static_cast<int32_t>(
+		(formula * roll + 9999) / 10000
+	);
+}
+
 Weapon::Weapon() = default;
 
 LuaScriptInterface* Weapon::getScriptInterface() const {

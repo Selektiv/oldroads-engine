@@ -46,6 +46,12 @@ public:
 
 	static int32_t getMaxMeleeDamage(int32_t attackSkill, int32_t attackValue);
 	static int32_t getMaxWeaponDamage(uint32_t level, int32_t attackSkill, int32_t attackValue, float attackFactor, bool isMelee);
+	static int32_t getOldroadsWeaponDamage(
+		int32_t attackSkill,
+		int32_t attackValue,
+		FightMode_t fightMode,
+		int32_t roll
+	);
 
 	bool registerLuaEvent(const WeaponShared_ptr &event, bool fromXML = false);
 	void clear(bool isFromXML = false);
