@@ -677,25 +677,67 @@ int16_t WeaponMelee::getElementDamageValue() const {
 	return elementDamage;
 }
 
-int32_t WeaponMelee::getWeaponDamage(const std::shared_ptr<Player> &player, const std::shared_ptr<Creature> &, const std::shared_ptr<Item> &item, bool maxDamage /*= false*/) const {
-	const auto proficiencyAttack = player->weaponProficiency().getStat(WeaponProficiencyBonus_t::ATTACK_DAMAGE);
+int32_t WeaponMelee::getWeaponDamage(
+	const std::shared_ptr<Player> &player,
+	const std::shared_ptr<Creature> &,
+	const std::shared_ptr<Item> &item,
+	bool maxDamage /*= false*/
+) const {
 	const int32_t attackSkill = player->getWeaponSkill(item);
 	const int32_t physicalAttack = std::max<int32_t>(0, item->getAttack());
 	const int32_t elementalAttack = getElementDamageValue();
-	const int32_t combinedAttack = physicalAttack + elementalAttack + proficiencyAttack;
 
-	const float attackFactor = player->getAttackFactor();
-	const uint32_t level = player->getLevel();
+	// Elemental weapons still use Canary's existing calculation for now.
+	// They require a separate decision about how physical and elemental
+	// portions should be divided under the Oldroads rules.
+	if (elementalAttack != 0) {
+		const int32_t proficiencyAttack = player->weaponProficiency().getStat(
+			WeaponProficiencyBonus_t::ATTACK_DAMAGE
+		);
 
-	const auto maxValue = static_cast<int32_t>(Weapons::getMaxWeaponDamage(level, attackSkill, combinedAttack, attackFactor, true) * player->getVocation()->meleeDamageMultiplier);
+		const int32_t combinedAttack = physicalAttack + elementalAttack + proficiencyAttack;
 
-	const int32_t minValue = physicalAttack > 0 ? level / 5 : 0;
+		const float attackFactor = player->getAttackFactor();
+		const uint32_t level = player->getLevel();
 
-	if (maxDamage) {
-		return -maxValue;
+		const int32_t maximum = static_cast<int32_t>(
+			Weapons::getMaxWeaponDamage(
+				level,
+				attackSkill,
+				combinedAttack,
+				attackFactor,
+				true
+			)
+			* player->getVocation()->meleeDamageMultiplier
+		);
+
+		const int32_t minimum = physicalAttack > 0 ? level / 5 : 0;
+
+		if (maxDamage) {
+			return -maximum;
+		}
+
+		return -normal_random(minimum, maximum);
 	}
 
-	return -normal_random(minValue, maxValue);
+	const int32_t roll = maxDamage
+		? 99
+		: (
+			  uniform_random(0, 99) + uniform_random(0, 99)
+		  ) / 2;
+
+	int32_t damage = Weapons::getOldroadsWeaponDamage(
+		attackSkill,
+		physicalAttack,
+		player->getFightMode(),
+		roll
+	);
+
+	damage = static_cast<int32_t>(
+		damage * player->getVocation()->meleeDamageMultiplier
+	);
+
+	return -damage;
 }
 
 WeaponDistance::WeaponDistance() {
