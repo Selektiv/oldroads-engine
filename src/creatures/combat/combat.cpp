@@ -2794,7 +2794,8 @@ void Combat::applyExtensions(const std::shared_ptr<Creature> &caster, const std:
 				targetCreature->setCombatDamage(targetDamage);
 			}
 		}
-	} else if (monster && criticalHitsEnabled) {
+	}else if (monster) {
+	if (criticalHitsEnabled) {
 		uint16_t baseChance = monster->getCriticalChance() * 100;
 		int32_t baseBonus = monster->getCriticalDamage() * 100;
 		baseBonus += damage.criticalDamage;
@@ -2802,14 +2803,17 @@ void Combat::applyExtensions(const std::shared_ptr<Creature> &caster, const std:
 		baseChance += static_cast<uint16_t>(damage.criticalChance);
 
 		if (baseChance != 0 && uniform_random(1, 10000) <= baseChance) {
-			damage.critical = true;
-			damage.primary.value *= multiplier;
-			damage.secondary.value *= multiplier;
+				damage.critical = true;
+				damage.primary.value *= multiplier;
+				damage.secondary.value *= multiplier;
 		}
-
-		damage.primary.value *= monster->getAttackMultiplier();
-		damage.secondary.value *= monster->getAttackMultiplier();
 	}
+
+	// The base monster attack multiplier is independent of critical hits.
+	// It must still apply when the critical-hit system is disabled.
+	damage.primary.value *= monster->getAttackMultiplier();
+	damage.secondary.value *= monster->getAttackMultiplier();
+}
 }
 
 MagicField::MagicField(uint16_t type) :

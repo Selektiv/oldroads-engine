@@ -8514,7 +8514,10 @@ bool Game::combatChangeHealth(const std::shared_ptr<Creature> &attacker, const s
 			attackerMonster = nullptr;
 		}
 
-		if (attacker && attackerPlayer && damage.extension == false && damage.origin == ORIGIN_RANGED && target == attackerPlayer->getAttackedCreature()) {
+		if (g_configManager().getBoolean(PERFECT_SHOT_SYSTEM_ENABLED)
+		    && attacker && attackerPlayer && damage.extension == false
+		    && damage.origin == ORIGIN_RANGED
+		    && target == attackerPlayer->getAttackedCreature()) {
 			const Position &attackerPos = attacker->getPosition();
 			if (targetPos.z == attackerPos.z) {
 				int32_t distanceX = Position::getDistanceX(targetPos, attackerPos);

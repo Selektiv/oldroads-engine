@@ -834,8 +834,18 @@ uint16_t Player::getDefenseEquipment() const {
 		defenseValue = weapon->getDefense() + weapon->getExtraDefense();
 	}
 
-	if (g_configManager().getBoolean(TOGGLE_WHEELSYSTEM) && shield->getDefense() > 0) {
-		defenseValue += wheel().getMajorStatConditional("Combat Mastery", WheelMajor_t::DEFENSE);
+	if (shield) {
+		defenseValue = weapon
+			? shield->getDefense() + weapon->getExtraDefense()
+			: shield->getDefense();
+
+		if (g_configManager().getBoolean(TOGGLE_WHEELSYSTEM)
+		    && shield->getDefense() > 0) {
+			defenseValue += wheel().getMajorStatConditional(
+				"Combat Mastery",
+				WheelMajor_t::DEFENSE
+			);
+		}
 	}
 
 	if (g_configManager().getBoolean(WEAPON_PROFICIENCY_ENABLED)) {

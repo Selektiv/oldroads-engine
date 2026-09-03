@@ -98,11 +98,18 @@ maxContainerDepth = 200
 maxInboxItems = 0
 maxExivaWhitelist = 100
 
+-- Oldroads combat system gates
+-- Keep these systems available in the engine but inactive unless explicitly enabled.
+criticalHitSystemEnabled = false
+perfectShotSystemEnabled = false
+forgeSystemEnabled = false
+weaponProficiencySystemEnabled = false
+
 -- Player base critical
 -- NOTE: 0.05 means 5%
-playerBaseCriticalChance = 0.05
+playerBaseCriticalChance = 0
 -- NOTE: 0.1 means 10%
-playerBaseCriticalDamage = 0.1
+playerBaseCriticalDamage = 0
 
 -- Weapon Proficiency
 weaponProficiencyMaxLevels = 10
