@@ -115,3 +115,39 @@ TEST(OldroadsWeaponDamageTest, DocumentsClassicArrowDamageCeilings) {
 		)
 	);
 }
+
+TEST(OldroadsWeaponDamageTest, DocumentsClassicFistDamageCeilings) {
+	constexpr int32_t fistSkill = 10;
+	constexpr int32_t fistAttack = 7;
+	constexpr int32_t maximumRoll = 99;
+
+	EXPECT_EQ(
+		8,
+		Weapons::getOldroadsWeaponDamage(
+			fistSkill,
+			fistAttack,
+			FIGHTMODE_ATTACK,
+			maximumRoll
+		)
+	);
+
+	EXPECT_EQ(
+		7,
+		Weapons::getOldroadsWeaponDamage(
+			fistSkill,
+			fistAttack,
+			FIGHTMODE_BALANCED,
+			maximumRoll
+		)
+	);
+
+	EXPECT_EQ(
+		5,
+		Weapons::getOldroadsWeaponDamage(
+			fistSkill,
+			fistAttack,
+			FIGHTMODE_DEFENSE,
+			maximumRoll
+		)
+	);
+}

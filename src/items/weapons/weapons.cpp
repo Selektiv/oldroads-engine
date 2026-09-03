@@ -261,11 +261,21 @@ bool Weapon::useFist(const std::shared_ptr<Player> &player, const std::shared_pt
 		return false;
 	}
 
-	const float attackFactor = player->getAttackFactor();
 	const int32_t attackSkill = player->getSkillLevel(SKILL_FIST);
 	constexpr int32_t attackValue = 7;
+	const int32_t roll = (
+		uniform_random(0, 99) + uniform_random(0, 99)
+	) / 2;
 
-	const int32_t maxDamage = Weapons::getMaxWeaponDamage(player->getLevel(), attackSkill, attackValue, attackFactor, true);
+	int32_t fistDamage = Weapons::getOldroadsWeaponDamage(
+		attackSkill,
+		attackValue,
+		player->getFightMode(),
+		roll
+	);
+	fistDamage = static_cast<int32_t>(
+		fistDamage * player->getVocation()->meleeDamageMultiplier
+	);
 
 	CombatParams params;
 	params.combatType = COMBAT_PHYSICALDAMAGE;
@@ -281,7 +291,7 @@ bool Weapon::useFist(const std::shared_ptr<Player> &player, const std::shared_pt
 	}
 
 	damage.primary.type = params.combatType;
-	damage.primary.value = -normal_random(0, maxDamage);
+	damage.primary.value = -fistDamage;
 
 	Combat::doCombatHealth(player, target, damage, params);
 	if (!player->hasFlag(PlayerFlags_t::NotGainSkill) && player->getAddAttackSkill()) {
