@@ -757,7 +757,7 @@ public:
 	[[nodiscard]] FightMode_t getFightMode() const {
 		return fightMode;
 	}
-
+	
 	void setSecureMode(bool mode);
 	void setPvpMode(PvpMode_t mode);
 	[[nodiscard]] PvpMode_t getPvpMode() const;

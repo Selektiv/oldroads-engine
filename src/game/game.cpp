@@ -8295,7 +8295,7 @@ void Game::applyWheelOfDestinyEffectsToDamage(CombatDamage &damage, const std::s
 		damage.secondary.value += (damage.secondary.value * (damage.damageMultiplier)) / 100.;
 	}
 
-	if (attackerPlayer) {
+	if (attackerPlayer && g_configManager().getBoolean(TOGGLE_WHEELSYSTEM)) {
 		damage.primary.value -= attackerPlayer->wheel().getStat(WheelStat_t::DAMAGE);
 		if (damage.secondary.value != 0) {
 			damage.secondary.value -= attackerPlayer->wheel().getStat(WheelStat_t::DAMAGE);
@@ -8324,20 +8324,29 @@ void Game::applyWheelOfDestinyEffectsToDamage(CombatDamage &damage, const std::s
 	}
 }
 
-int32_t Game::applyHealthChange(const CombatDamage &damage, const std::shared_ptr<Creature> &target) const {
+int32_t Game::applyHealthChange(
+	const CombatDamage &damage,
+	const std::shared_ptr<Creature> &target
+) const {
 	int32_t targetHealth = target->getHealth();
 
-	// Wheel of destiny (Gift of Life)
-	if (std::shared_ptr<Player> targetPlayer = target->getPlayer()) {
-		if (targetPlayer->wheel().getInstant("Gift of Life") && targetPlayer->wheel().getGiftOfCooldown() == 0 && (damage.primary.value + damage.secondary.value) >= targetHealth) {
+	// Wheel of Destiny - Gift of Life
+	if (const std::shared_ptr<Player> targetPlayer = target->getPlayer()) {
+		if (g_configManager().getBoolean(TOGGLE_WHEELSYSTEM)
+		    && targetPlayer->wheel().getInstant("Gift of Life")
+		    && targetPlayer->wheel().getGiftOfCooldown() == 0
+		    && (damage.primary.value + damage.secondary.value) >= targetHealth) {
 			int32_t overkillMultiplier = (damage.primary.value + damage.secondary.value) - targetHealth;
+
 			overkillMultiplier = (overkillMultiplier * 100) / targetPlayer->getMaxHealth();
+
 			if (overkillMultiplier <= targetPlayer->wheel().getGiftOfLifeValue()) {
 				targetPlayer->wheel().checkGiftOfLife();
 				targetHealth = target->getHealth();
 			}
 		}
 	}
+
 	return targetHealth;
 }
 
@@ -8999,7 +9008,9 @@ void Game::applyManaLeech(
 	const std::shared_ptr<Player> &attackerPlayer, const std::shared_ptr<Monster> &targetMonster, const std::shared_ptr<Creature> &target, const CombatDamage &damage, const int32_t &realDamage
 ) const {
 	// Wheel of destiny bonus - mana leech chance and amount
-	auto wheelLeechAmount = attackerPlayer->wheel().checkDrainBodyLeech(target, SKILL_MANA_LEECH_AMOUNT);
+	const auto wheelLeechAmount = g_configManager().getBoolean(TOGGLE_WHEELSYSTEM)
+		? attackerPlayer->wheel().checkDrainBodyLeech(target, SKILL_MANA_LEECH_AMOUNT)
+		: 0;
 	int64_t manaSkill = static_cast<int64_t>(attackerPlayer->getSkillLevel(SKILL_MANA_LEECH_AMOUNT)) + wheelLeechAmount + damage.manaLeech;
 
 	// Void charm rune
@@ -9030,7 +9041,9 @@ void Game::applyLifeLeech(
 	const std::shared_ptr<Player> &attackerPlayer, const std::shared_ptr<Monster> &targetMonster, const std::shared_ptr<Creature> &target, const CombatDamage &damage, const int32_t &realDamage
 ) const {
 	// Wheel of destiny bonus - life leech chance and amount
-	auto wheelLeechAmount = attackerPlayer->wheel().checkDrainBodyLeech(target, SKILL_LIFE_LEECH_AMOUNT);
+	const auto wheelLeechAmount = g_configManager().getBoolean(TOGGLE_WHEELSYSTEM)
+		? attackerPlayer->wheel().checkDrainBodyLeech(target, SKILL_LIFE_LEECH_AMOUNT)
+		: 0;
 	int64_t lifeSkill = static_cast<int64_t>(attackerPlayer->getSkillLevel(SKILL_LIFE_LEECH_AMOUNT)) + wheelLeechAmount + damage.lifeLeech;
 
 	if (targetMonster && attackerPlayer->parseRacebyCharm(CHARM_VAMP) == targetMonster->getRaceId()) {

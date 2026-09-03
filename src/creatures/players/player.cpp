@@ -746,8 +746,12 @@ void Player::getShieldAndWeapon(std::shared_ptr<Item> &shield, std::shared_ptr<I
 		}
 	}
 }
-
+//Return 0 as long as wheel system is false
 float Player::getMitigation() const {
+	if (!g_configManager().getBoolean(TOGGLE_WHEELSYSTEM)) {
+		return 0.0f;
+	}
+
 	return wheel().calculateMitigation();
 }
 
@@ -790,14 +794,20 @@ int32_t Player::getDefense(bool sendToClient /* = false*/) const {
 			? shield->getDefense() + weapon->getExtraDefense()
 			: shield->getDefense();
 		// Wheel of destiny - Combat Mastery
-		if (shield->getDefense() > 0) {
+		if (g_configManager().getBoolean(TOGGLE_WHEELSYSTEM) && shield->getDefense() > 0) {
 			defenseValue += wheel().getMajorStatConditional("Combat Mastery", WheelMajor_t::DEFENSE);
 		}
 		defenseSkill = getSkillLevel(SKILL_SHIELD);
 	}
 
-	defenseValue += weaponProficiency().getStat(WeaponProficiencyBonus_t::DEFENSE_BONUS);
-	defenseValue += weaponProficiency().getStat(WeaponProficiencyBonus_t::WEAPON_SHIELD_MODIFIER);
+	if (g_configManager().getBoolean(WEAPON_PROFICIENCY_ENABLED)) {
+		defenseValue += weaponProficiency().getStat(
+			WeaponProficiencyBonus_t::DEFENSE_BONUS
+		);
+		defenseValue += weaponProficiency().getStat(
+			WeaponProficiencyBonus_t::WEAPON_SHIELD_MODIFIER
+		);
+	}
 
 	if (defenseSkill == 0) {
 		switch (fightMode) {
@@ -824,16 +834,18 @@ uint16_t Player::getDefenseEquipment() const {
 		defenseValue = weapon->getDefense() + weapon->getExtraDefense();
 	}
 
-	if (shield) {
-		defenseValue = weapon != nullptr ? shield->getDefense() + weapon->getExtraDefense() : shield->getDefense();
-		if (shield->getDefense() > 0) {
-			defenseValue += wheel().getMajorStatConditional("Combat Mastery", WheelMajor_t::DEFENSE);
-		}
+	if (g_configManager().getBoolean(TOGGLE_WHEELSYSTEM) && shield->getDefense() > 0) {
+		defenseValue += wheel().getMajorStatConditional("Combat Mastery", WheelMajor_t::DEFENSE);
 	}
 
-	defenseValue += weaponProficiency().getStat(WeaponProficiencyBonus_t::DEFENSE_BONUS);
-	defenseValue += weaponProficiency().getStat(WeaponProficiencyBonus_t::WEAPON_SHIELD_MODIFIER);
-
+	if (g_configManager().getBoolean(WEAPON_PROFICIENCY_ENABLED)) {
+		defenseValue += weaponProficiency().getStat(
+			WeaponProficiencyBonus_t::DEFENSE_BONUS
+		);
+		defenseValue += weaponProficiency().getStat(
+			WeaponProficiencyBonus_t::WEAPON_SHIELD_MODIFIER
+		);
+	}
 	return defenseValue;
 }
 
@@ -3963,8 +3975,9 @@ BlockType_t Player::blockHit(const std::shared_ptr<Creature> &attacker, const Co
 		}
 
 		// Wheel of destiny - apply resistance
-		wheel().adjustDamageBasedOnResistanceAndSkill(damage, combatType);
-
+		if (g_configManager().getBoolean(TOGGLE_WHEELSYSTEM)) {
+			wheel().adjustDamageBasedOnResistanceAndSkill(damage, combatType);
+		}
 		if (damage <= 0) {
 			damage = 0;
 			blockType = BLOCK_ARMOR;
@@ -7485,37 +7498,53 @@ uint16_t Player::getSkillLevel(skills_t skill) const {
 		skillLevel = std::min<int32_t>(it->second, skillLevel);
 	}
 
-	// Wheel of destiny
-	if (skill == SKILL_FIST) {
-		skillLevel += m_wheelPlayer.getStat(WheelStat_t::FIST);
-	} else if (skill >= SKILL_CLUB && skill <= SKILL_AXE) {
-		skillLevel += m_wheelPlayer.getStat(WheelStat_t::MELEE);
-	} else if (skill == SKILL_DISTANCE) {
-		skillLevel += m_wheelPlayer.getMajorStatConditional("Positional Tactics", WheelMajor_t::DISTANCE);
-		skillLevel += m_wheelPlayer.getStat(WheelStat_t::DISTANCE);
-	} else if (skill == SKILL_SHIELD) {
-		skillLevel += m_wheelPlayer.getMajorStatConditional("Battle Instinct", WheelMajor_t::SHIELD);
-	} else if (skill == SKILL_LIFE_LEECH_AMOUNT) {
-		skillLevel += m_wheelPlayer.getStat(WheelStat_t::LIFE_LEECH);
-	} else if (skill == SKILL_MANA_LEECH_AMOUNT) {
-		skillLevel += m_wheelPlayer.getStat(WheelStat_t::MANA_LEECH);
-	} else if (skill == SKILL_CRITICAL_HIT_DAMAGE) {
-		skillLevel += m_wheelPlayer.getStat(WheelStat_t::CRITICAL_DAMAGE);
-		skillLevel += m_wheelPlayer.getMajorStatConditional("Combat Mastery", WheelMajor_t::CRITICAL_DMG_2);
-		skillLevel += m_wheelPlayer.getMajorStatConditional("Ballistic Mastery", WheelMajor_t::CRITICAL_DMG);
-		skillLevel += m_wheelPlayer.checkAvatarSkill(WheelAvatarSkill_t::CRITICAL_DAMAGE);
-		skillLevel += m_weaponProficiency.getGeneralCritical().damage * 10000;
-	} else if (skill == SKILL_CRITICAL_HIT_CHANCE) {
-		skillLevel += m_weaponProficiency.getGeneralCritical().chance * 10000;
+// Wheel of destiny
+	if (g_configManager().getBoolean(TOGGLE_WHEELSYSTEM)) {
+		if (skill == SKILL_FIST) {
+			skillLevel += m_wheelPlayer.getStat(WheelStat_t::FIST);
+		} else if (skill >= SKILL_CLUB && skill <= SKILL_AXE) {
+			skillLevel += m_wheelPlayer.getStat(WheelStat_t::MELEE);
+		} else if (skill == SKILL_DISTANCE) {
+			skillLevel += m_wheelPlayer.getMajorStatConditional("Positional Tactics", WheelMajor_t::DISTANCE);
+			skillLevel += m_wheelPlayer.getStat(WheelStat_t::DISTANCE);
+		} else if (skill == SKILL_SHIELD) {
+			skillLevel += m_wheelPlayer.getMajorStatConditional("Battle Instinct", WheelMajor_t::SHIELD);
+		} else if (skill == SKILL_LIFE_LEECH_AMOUNT) {
+			skillLevel += m_wheelPlayer.getStat(WheelStat_t::LIFE_LEECH);
+		} else if (skill == SKILL_MANA_LEECH_AMOUNT) {
+			skillLevel += m_wheelPlayer.getStat(WheelStat_t::MANA_LEECH);
+		} else if (skill == SKILL_CRITICAL_HIT_DAMAGE) {
+			skillLevel += m_wheelPlayer.getStat(WheelStat_t::CRITICAL_DAMAGE);
+			skillLevel += m_wheelPlayer.getMajorStatConditional("Combat Mastery", WheelMajor_t::CRITICAL_DMG_2);
+			skillLevel += m_wheelPlayer.getMajorStatConditional("Ballistic Mastery", WheelMajor_t::CRITICAL_DMG);
+			skillLevel += m_wheelPlayer.checkAvatarSkill(WheelAvatarSkill_t::CRITICAL_DAMAGE);
+		} else if (skill == SKILL_CRITICAL_HIT_CHANCE) {
+			// Proficiency's general critical is handled below.
+		}
 	}
 
 	// Weapon proficiency
-	const auto weaponProficiencySkill = m_weaponProficiency.getSkillBonus(skill);
-	skillLevel += weaponProficiencySkill;
+	if (g_configManager().getBoolean(WEAPON_PROFICIENCY_ENABLED)) {
+		if (skill == SKILL_CRITICAL_HIT_DAMAGE) {
+			skillLevel += static_cast<int32_t>(
+				m_weaponProficiency.getGeneralCritical().damage * 10000
+			);
+		} else if (skill == SKILL_CRITICAL_HIT_CHANCE) {
+			skillLevel += static_cast<int32_t>(
+				m_weaponProficiency.getGeneralCritical().chance * 10000
+			);
+		}
 
-	const int32_t avatarCritChance = m_wheelPlayer.checkAvatarSkill(WheelAvatarSkill_t::CRITICAL_CHANCE);
-	if (skill == SKILL_CRITICAL_HIT_CHANCE && avatarCritChance > 0) {
-		skillLevel = avatarCritChance; // 100%
+		skillLevel += m_weaponProficiency.getSkillBonus(skill);
+	}
+
+
+	if (g_configManager().getBoolean(TOGGLE_WHEELSYSTEM)) {
+		const int32_t avatarCritChance = m_wheelPlayer.checkAvatarSkill(WheelAvatarSkill_t::CRITICAL_CHANCE);
+
+		if (skill == SKILL_CRITICAL_HIT_CHANCE && avatarCritChance > 0) {
+			skillLevel = avatarCritChance;
+		}
 	}
 
 	return std::min<uint16_t>(std::numeric_limits<uint16_t>::max(), std::max<uint16_t>(0, static_cast<uint16_t>(skillLevel)));
@@ -7568,9 +7597,12 @@ int32_t Player::getPerfectShotDamage(uint8_t range, bool useCharges) const {
 		result = it->second;
 	}
 
-	const auto &perfectShotBonus = weaponProficiency().getPerfectShotBonus();
-	if (perfectShotBonus.range == range) {
-		result += static_cast<int32_t>(std::lround(perfectShotBonus.damage));
+	if (g_configManager().getBoolean(WEAPON_PROFICIENCY_ENABLED)) {
+		const auto &perfectShotBonus = weaponProficiency().getPerfectShotBonus();
+
+		if (perfectShotBonus.range == range) {
+			result += static_cast<int32_t>(std::lround(perfectShotBonus.damage));
+		}
 	}
 
 	for (const auto &item : getEquippedItems()) {
@@ -12910,7 +12942,9 @@ bool Player::hasPermittedConditionInPZ() const {
 
 uint16_t Player::getDodgeChance() const {
 	const auto &playerArmor = getInventoryItem(CONST_SLOT_ARMOR);
-	const auto wheelDodge = m_wheelPlayer.getStat(WheelStat_t::DODGE);
+	const auto wheelDodge = g_configManager().getBoolean(TOGGLE_WHEELSYSTEM)
+		? m_wheelPlayer.getStat(WheelStat_t::DODGE)
+		: 0;
 	if (!playerArmor || playerArmor->getTier() == 0) {
 		return wheelDodge;
 	}

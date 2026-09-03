@@ -866,19 +866,28 @@ void Combat::CombatHealthFunc(const std::shared_ptr<Creature> &caster, const std
 			}
 		}
 
-		attackerPlayer->weaponProficiency().applySkillAutoAttackPercentage(damage);
-		attackerPlayer->weaponProficiency().applySkillSpellPercentage(damage);
-		attackerPlayer->weaponProficiency().applySkillSpellPercentage(damage, true);
-
-		damage.damageMultiplier += attackerPlayer->wheel().getMajorStatConditional("Divine Empowerment", WheelMajor_t::DAMAGE);
-		g_logger().trace("Wheel Divine Empowerment damage multiplier {}", damage.damageMultiplier);
+		if (g_configManager().getBoolean(WEAPON_PROFICIENCY_ENABLED)) {
+			attackerPlayer->weaponProficiency().applySkillAutoAttackPercentage(damage);
+			attackerPlayer->weaponProficiency().applySkillSpellPercentage(damage);
+			attackerPlayer->weaponProficiency().applySkillSpellPercentage(damage, true);
+		}
+		if (g_configManager().getBoolean(TOGGLE_WHEELSYSTEM)) {
+			damage.damageMultiplier += attackerPlayer->wheel().getMajorStatConditional(
+				"Divine Empowerment",
+				WheelMajor_t::DAMAGE
+			);
+			g_logger().trace(
+				"Wheel Divine Empowerment damage multiplier {}",
+				damage.damageMultiplier
+			);
+		}
 	}
 
 	if (g_game().combatBlockHit(damage, caster, target, params.blockedByShield, params.blockedByArmor, params.itemId != 0)) {
 		return;
 	}
 
-	if (attackerPlayer) {
+	if (attackerPlayer && g_configManager().getBoolean(WEAPON_PROFICIENCY_ENABLED)) {
 		attackerPlayer->weaponProficiency().applyOn(WeaponProficiencyHealth_t::LIFE, WeaponProficiencyGain_t::HIT);
 		attackerPlayer->weaponProficiency().applyOn(WeaponProficiencyHealth_t::MANA, WeaponProficiencyGain_t::HIT);
 	}
@@ -891,9 +900,10 @@ void Combat::CombatHealthFunc(const std::shared_ptr<Creature> &caster, const std
 			damage.secondary.value += static_cast<int32_t>(std::ceil((damage.secondary.value * slot->bonusPercentage) / 100));
 		}
 
-		attackerPlayer->weaponProficiency().applyBestiaryDamage(damage, targetMonster);
-		attackerPlayer->weaponProficiency().applyPowerfulFoeDamage(damage, targetMonster);
-
+		if (g_configManager().getBoolean(WEAPON_PROFICIENCY_ENABLED)) {
+			attackerPlayer->weaponProficiency().applyBestiaryDamage(damage, targetMonster);
+			attackerPlayer->weaponProficiency().applyPowerfulFoeDamage(damage, targetMonster);
+		}
 		// Monster type onPlayerAttack event
 		targetMonster->onAttackedByPlayer(attackerPlayer);
 	}
@@ -2659,9 +2669,11 @@ void Combat::applyExtensions(const std::shared_ptr<Creature> &caster, const std:
 		uint16_t lowBlowRaceid = player->parseRacebyCharm(CHARM_LOW);
 		uint16_t savageBlowRaceid = player->parseRacebyCharm(CHARM_SAVAGE);
 
-		player->weaponProficiency().applyAutoAttackCritical(damage);
-		player->weaponProficiency().applyRunesCritical(damage, params.aggressive);
-		player->weaponProficiency().applyElementCritical(damage);
+		if (g_configManager().getBoolean(WEAPON_PROFICIENCY_ENABLED)) {
+			player->weaponProficiency().applyAutoAttackCritical(damage);
+			player->weaponProficiency().applyRunesCritical(damage, params.aggressive);
+			player->weaponProficiency().applyElementCritical(damage);
+		}
 
 		baseBonus += damage.criticalDamage;
 		baseChance += static_cast<uint16_t>(damage.criticalChance);

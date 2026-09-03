@@ -214,11 +214,21 @@ bool ConfigManager::load() {
 	loadFloatConfig(L, AMPLIFICATION_CHANCE_FORMULA_A, "amplificationChanceFormulaA", 0.4);
 	loadFloatConfig(L, AMPLIFICATION_CHANCE_FORMULA_B, "amplificationChanceFormulaB", 1.7);
 	loadFloatConfig(L, AMPLIFICATION_CHANCE_FORMULA_C, "amplificationChanceFormulaC", 0.4);
-
+	loadBoolConfig(
+		L,
+		FORGE_SYSTEM_ENABLED,
+		"forgeSystemEnabled",
+		false
+	);
 	loadFloatConfig(L, PLAYER_BASE_CRITICAL_CHANCE, "playerBaseCriticalChance", 0.05);
 	loadFloatConfig(L, PLAYER_BASE_CRITICAL_DAMAGE, "playerBaseCriticalDamage", 0.1);
 	loadFloatConfig(L, WEAPON_PROFICIENCY_GAIN_MULTIPLIER, "weaponProficiencyGainMultiplier", 0.33);
-
+	loadBoolConfig(
+		L,
+		WEAPON_PROFICIENCY_ENABLED,
+		"weaponProficiencySystemEnabled",
+		false
+	);
 	loadFloatConfig(L, ANIMUS_MASTERY_MAX_MONSTER_XP_MULTIPLIER, "animusMasteryMaxMonsterXpMultiplier", 4.0);
 	loadFloatConfig(L, ANIMUS_MASTERY_MONSTER_XP_MULTIPLIER, "animusMasteryMonsterXpMultiplier", 2.0);
 	loadFloatConfig(L, ANIMUS_MASTERY_MONSTERS_XP_MULTIPLIER, "animusMasteryMonstersXpMultiplier", 0.1);

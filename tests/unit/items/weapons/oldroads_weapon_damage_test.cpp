@@ -80,3 +80,38 @@ EXPECT_EQ(
 		)
 	);
 }
+TEST(OldroadsWeaponDamageTest, DocumentsClassicArrowDamageCeilings) {
+	constexpr int32_t distanceSkill = 80;
+	constexpr int32_t arrowAttack = 25;
+	constexpr int32_t maximumRoll = 99;
+
+	EXPECT_EQ(
+		134,
+		Weapons::getOldroadsWeaponDamage(
+			distanceSkill,
+			arrowAttack,
+			FIGHTMODE_ATTACK,
+			maximumRoll
+		)
+	);
+
+	EXPECT_EQ(
+		112,
+		Weapons::getOldroadsWeaponDamage(
+			distanceSkill,
+			arrowAttack,
+			FIGHTMODE_BALANCED,
+			maximumRoll
+		)
+	);
+
+	EXPECT_EQ(
+		67,
+		Weapons::getOldroadsWeaponDamage(
+			distanceSkill,
+			arrowAttack,
+			FIGHTMODE_DEFENSE,
+			maximumRoll
+		)
+	);
+}

@@ -168,7 +168,11 @@ void Weapon::configureWeapon(const ItemType &it) {
 }
 
 int32_t Weapon::playerWeaponCheck(const std::shared_ptr<Player> &player, const std::shared_ptr<Creature> &target, int32_t shootRange) const {
-	shootRange += player->weaponProficiency().getStat(WeaponProficiencyBonus_t::ATTACK_RANGE);
+	if (g_configManager().getBoolean(WEAPON_PROFICIENCY_ENABLED)) {
+		shootRange += player->weaponProficiency().getStat(
+			WeaponProficiencyBonus_t::ATTACK_RANGE
+		);
+	}
 
 	const Position &playerPos = player->getPosition();
 	const Position &targetPos = target->getPosition();
@@ -905,8 +909,12 @@ bool WeaponDistance::useWeapon(const std::shared_ptr<Player> &player, const std:
 		const auto &bow = player->getWeapon(true);
 		if (bow && bow->getHitChance() != 0) {
 			chance += bow->getHitChance();
-			chance += player->weaponProficiency().getStat(WeaponProficiencyBonus_t::RANGED_HIT_CHANCE);
-		}
+
+			if (g_configManager().getBoolean(WEAPON_PROFICIENCY_ENABLED)) {
+				chance += player->weaponProficiency().getStat(
+					WeaponProficiencyBonus_t::RANGED_HIT_CHANCE
+				);
+			}
 	}
 
 	if (chance >= uniform_random(1, 100)) {
@@ -1020,12 +1028,13 @@ int32_t WeaponDistance::getWeaponDamage(
 		return -damage;
 	}
 
-	// Preserve Canary's existing elemental distance calculation until
+// Preserve Canary's existing elemental distance calculation until
 	// Oldroads defines how physical and elemental portions should interact.
-	attackValue += player->weaponProficiency().getStat(
-		WeaponProficiencyBonus_t::ATTACK_DAMAGE
-	);
-
+	if (g_configManager().getBoolean(WEAPON_PROFICIENCY_ENABLED)) {
+		attackValue += player->weaponProficiency().getStat(
+			WeaponProficiencyBonus_t::ATTACK_DAMAGE
+		);
+	}
 	const float attackFactor = player->getAttackFactor();
 
 	int32_t minValue = player->getLevel() / 5;
