@@ -2662,21 +2662,39 @@ void Combat::applyExtensions(const std::shared_ptr<Creature> &caster, const std:
 	const auto &player = caster->getPlayer();
 	const auto &monster = caster->getMonster();
 
+	const bool criticalHitsEnabled = g_configManager().getBoolean(CRITICAL_HIT_SYSTEM_ENABLED);
+
 	if (player) {
-		uint16_t baseChance = player->getSkillLevel(SKILL_CRITICAL_HIT_CHANCE) + player->getBaseCritical().chance * 10000;
-		int32_t baseBonus = player->getSkillLevel(SKILL_CRITICAL_HIT_DAMAGE) + player->getBaseCritical().damage * 10000;
+		uint16_t baseChance = criticalHitsEnabled
+			? player->getSkillLevel(SKILL_CRITICAL_HIT_CHANCE)
+				+ static_cast<uint16_t>(player->getBaseCritical().chance * 10000)
+			: 0;
 
-		uint16_t lowBlowRaceid = player->parseRacebyCharm(CHARM_LOW);
-		uint16_t savageBlowRaceid = player->parseRacebyCharm(CHARM_SAVAGE);
+		int32_t baseBonus = criticalHitsEnabled
+			? player->getSkillLevel(SKILL_CRITICAL_HIT_DAMAGE)
+				+ static_cast<int32_t>(player->getBaseCritical().damage * 10000)
+			: 0;
 
-		if (g_configManager().getBoolean(WEAPON_PROFICIENCY_ENABLED)) {
+		uint16_t lowBlowRaceid = criticalHitsEnabled
+			? player->parseRacebyCharm(CHARM_LOW)
+			: 0;
+
+		uint16_t savageBlowRaceid = criticalHitsEnabled
+			? player->parseRacebyCharm(CHARM_SAVAGE)
+			: 0;
+
+
+		if (criticalHitsEnabled
+		    && g_configManager().getBoolean(WEAPON_PROFICIENCY_ENABLED)) {
 			player->weaponProficiency().applyAutoAttackCritical(damage);
 			player->weaponProficiency().applyRunesCritical(damage, params.aggressive);
 			player->weaponProficiency().applyElementCritical(damage);
 		}
 
-		baseBonus += damage.criticalDamage;
-		baseChance += static_cast<uint16_t>(damage.criticalChance);
+		if (criticalHitsEnabled) {
+			baseBonus += damage.criticalDamage;
+			baseChance += static_cast<uint16_t>(damage.criticalChance);
+		}
 
 		bool canApplyCritical = false;
 		std::unordered_map<uint16_t, bool> lowBlowCrits;
@@ -2776,7 +2794,7 @@ void Combat::applyExtensions(const std::shared_ptr<Creature> &caster, const std:
 				targetCreature->setCombatDamage(targetDamage);
 			}
 		}
-	} else if (monster) {
+	} else if (monster && criticalHitsEnabled) {
 		uint16_t baseChance = monster->getCriticalChance() * 100;
 		int32_t baseBonus = monster->getCriticalDamage() * 100;
 		baseBonus += damage.criticalDamage;
