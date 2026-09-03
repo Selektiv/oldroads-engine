@@ -907,6 +907,7 @@ bool WeaponDistance::useWeapon(const std::shared_ptr<Player> &player, const std:
 
 	if (!perfectShot && item->getWeaponType() == WEAPON_AMMO) {
 		const auto &bow = player->getWeapon(true);
+
 		if (bow && bow->getHitChance() != 0) {
 			chance += bow->getHitChance();
 
@@ -915,6 +916,7 @@ bool WeaponDistance::useWeapon(const std::shared_ptr<Player> &player, const std:
 					WeaponProficiencyBonus_t::RANGED_HIT_CHANCE
 				);
 			}
+		}
 	}
 
 	if (chance >= uniform_random(1, 100)) {
