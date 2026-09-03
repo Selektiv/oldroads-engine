@@ -973,47 +973,83 @@ int16_t WeaponDistance::getElementDamageValue() const {
 	return elementDamage;
 }
 
-int32_t WeaponDistance::getWeaponDamage(const std::shared_ptr<Player> &player, const std::shared_ptr<Creature> &target, const std::shared_ptr<Item> &item, bool maxDamage /*= false*/) const {
-	int32_t attackValue = item->getAttack();
-	attackValue += player->weaponProficiency().getStat(WeaponProficiencyBonus_t::ATTACK_DAMAGE);
-	bool hasElement = false;
+int32_t WeaponDistance::getWeaponDamage(
+	const std::shared_ptr<Player> &player,
+	const std::shared_ptr<Creature> &target,
+	const std::shared_ptr<Item> &item,
+	bool maxDamage /*= false*/
+) const {
+	int32_t attackValue = std::max<int32_t>(0, item->getAttack());
+	bool hasElement = getElementDamageValue() != 0;
 
-	if (player && item && item->getWeaponType() == WEAPON_AMMO) {
+	if (item->getWeaponType() == WEAPON_AMMO) {
 		const auto &weapon = player->getWeapon(true);
 		if (weapon) {
 			const ItemType &it = Item::items[item->getID()];
+
 			if (it.abilities && it.abilities->elementDamage != 0) {
 				attackValue += it.abilities->elementDamage;
 				hasElement = true;
 			}
 
-			attackValue += weapon->getAttack();
+			attackValue += std::max<int32_t>(0, weapon->getAttack());
 		}
 	}
 
 	const int32_t attackSkill = player->getSkillLevel(SKILL_DISTANCE);
+
+	// Ordinary physical distance weapons use the Oldroads formula.
+	if (!hasElement) {
+		const int32_t roll = maxDamage
+			? 99
+			: (
+				  uniform_random(0, 99)
+				  + uniform_random(0, 99)
+			  ) / 2;
+
+		int32_t damage = Weapons::getOldroadsWeaponDamage(
+			attackSkill,
+			attackValue,
+			player->getFightMode(),
+			roll
+		);
+
+		damage = static_cast<int32_t>(
+			damage * player->getVocation()->distDamageMultiplier
+		);
+		return -damage;
+	}
+
+	// Preserve Canary's existing elemental distance calculation until
+	// Oldroads defines how physical and elemental portions should interact.
+	attackValue += player->weaponProficiency().getStat(
+		WeaponProficiencyBonus_t::ATTACK_DAMAGE
+	);
+
 	const float attackFactor = player->getAttackFactor();
 
 	int32_t minValue = player->getLevel() / 5;
-	int32_t maxValue = std::round((0.09f * attackFactor) * attackSkill * attackValue + minValue);
+	int32_t maxValue = std::round(
+		(0.09f * attackFactor) * attackSkill * attackValue + minValue
+	);
+
 	if (maxDamage) {
 		return -maxValue;
 	}
 
 	if (target && target->getPlayer()) {
-		if (hasElement) {
-			minValue /= 4;
-		} else {
-			minValue /= 2;
-		}
+		minValue /= 4;
 	} else {
-		if (hasElement) {
-			maxValue /= 2;
-			minValue /= 2;
-		}
+		maxValue /= 2;
+		minValue /= 2;
 	}
 
-	return -normal_random(minValue, (maxValue * static_cast<int32_t>(player->getVocation()->distDamageMultiplier)));
+	return -normal_random(
+		minValue,
+		static_cast<int32_t>(
+			maxValue * player->getVocation()->distDamageMultiplier
+		)
+	);
 }
 
 bool WeaponDistance::getSkillType(const std::shared_ptr<Player> &player, const std::shared_ptr<Item> &, skills_t &skill, uint32_t &skillpoint) const {
