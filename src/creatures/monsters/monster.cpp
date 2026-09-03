@@ -3552,16 +3552,20 @@ bool Monster::isImmune() const {
 
 float Monster::getAttackMultiplier() const {
 	float multiplier = m_monsterType->getAttackMultiplier();
-	if (auto stacks = getForgeStack(); stacks > 0) {
-		multiplier *= (1.35 + (stacks - 1) * 0.1);
+	if (g_configManager().getBoolean(FORGE_SYSTEM_ENABLED)) {
+		if (const auto stacks = getForgeStack(); stacks > 0) {
+			multiplier *= (1.35 + (stacks - 1) * 0.1);
+		}
 	}
 	return multiplier;
 }
 
 float Monster::getDefenseMultiplier() const {
 	float multiplier = m_monsterType->getDefenseMultiplier();
-	if (auto stacks = getForgeStack(); stacks > 0) {
-		multiplier *= (1 + (0.1 * stacks));
+	if (g_configManager().getBoolean(FORGE_SYSTEM_ENABLED)) {
+		if (const auto stacks = getForgeStack(); stacks > 0) {
+			multiplier *= (1 + (0.1 * stacks));
+		}
 	}
 	return multiplier;
 }
@@ -3866,7 +3870,8 @@ void Monster::applyStacks() {
 }
 
 void Monster::configureForgeSystem(uint16_t stack /* = 0 */) {
-	if (!canBeForgeMonster()) {
+	if (!g_configManager().getBoolean(FORGE_SYSTEM_ENABLED)
+	    || !canBeForgeMonster()) {
 		return;
 	}
 

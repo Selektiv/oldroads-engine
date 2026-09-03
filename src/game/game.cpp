@@ -885,15 +885,28 @@ void Game::start(ServiceManager* manager) {
 	int minutes = tms->tm_min;
 	lightHour = (minutes * LIGHT_DAY_LENGTH) / 60;
 
-	[[maybe_unused]] auto eventId1 = g_dispatcher().scheduleEvent(
-		EVENT_MS + 1000, [this] { createFiendishMonsters(); }, "Game::createFiendishMonsters", DispatcherLane::Maintenance
-	);
-	[[maybe_unused]] auto eventId2 = g_dispatcher().scheduleEvent(
-		EVENT_MS + 1000, [this] { createInfluencedMonsters(); }, "Game::createInfluencedMonsters", DispatcherLane::Maintenance
-	);
-	[[maybe_unused]] auto eventId3 = g_dispatcher().cycleEvent(
-		EVENT_MS, [this] { updateForgeableMonsters(); }, "Game::updateForgeableMonsters", DispatcherLane::Maintenance
-	);
+	if (g_configManager().getBoolean(FORGE_SYSTEM_ENABLED)) {
+		[[maybe_unused]] auto eventId1 = g_dispatcher().scheduleEvent(
+			EVENT_MS + 1000,
+			[this] { createFiendishMonsters(); },
+			"Game::createFiendishMonsters",
+			DispatcherLane::Maintenance
+		);
+
+		[[maybe_unused]] auto eventId2 = g_dispatcher().scheduleEvent(
+			EVENT_MS + 1000,
+			[this] { createInfluencedMonsters(); },
+			"Game::createInfluencedMonsters",
+			DispatcherLane::Maintenance
+		);
+
+		[[maybe_unused]] auto eventId3 = g_dispatcher().cycleEvent(
+			EVENT_MS,
+			[this] { updateForgeableMonsters(); },
+			"Game::updateForgeableMonsters",
+			DispatcherLane::Maintenance
+		);
+	}
 	[[maybe_unused]] auto eventId4 = g_dispatcher().cycleEvent(
 		EVENT_LIGHTINTERVAL_MS, [this] { checkLight(); }, "Game::checkLight", DispatcherLane::Maintenance
 	);

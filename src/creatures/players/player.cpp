@@ -11125,6 +11125,9 @@ bool Player::isDead() const {
 }
 
 void Player::triggerMomentum() {
+	if (!g_configManager().getBoolean(FORGE_SYSTEM_ENABLED)) {
+		return;
+	}
 	const auto &item = getInventoryItem(CONST_SLOT_HEAD);
 	if (!item) {
 		return;
@@ -11208,6 +11211,10 @@ void Player::clearCooldowns(bool spenders /* = false */, bool builders /* = fals
 }
 
 void Player::triggerTranscendence() {
+	if (!g_configManager().getBoolean(FORGE_SYSTEM_ENABLED)) {
+		return;
+	}
+
 	if (wheel().getOnThinkTimer(WheelOnThink_t::AVATAR_FORGE) > OTSYS_TIME()) {
 		return;
 	}
@@ -12945,7 +12952,9 @@ uint16_t Player::getDodgeChance() const {
 	const auto wheelDodge = g_configManager().getBoolean(TOGGLE_WHEELSYSTEM)
 		? m_wheelPlayer.getStat(WheelStat_t::DODGE)
 		: 0;
-	if (!playerArmor || playerArmor->getTier() == 0) {
+	if (!g_configManager().getBoolean(FORGE_SYSTEM_ENABLED)
+	    || !playerArmor
+	    || playerArmor->getTier() == 0) {
 		return wheelDodge;
 	}
 
