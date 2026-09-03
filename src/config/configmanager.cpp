@@ -216,6 +216,12 @@ bool ConfigManager::load() {
 	loadFloatConfig(L, AMPLIFICATION_CHANCE_FORMULA_C, "amplificationChanceFormulaC", 0.4);
 	loadBoolConfig(
 		L,
+		PERFECT_SHOT_SYSTEM_ENABLED,
+		"perfectShotSystemEnabled",
+		false
+	);
+	loadBoolConfig(
+		L,
 		FORGE_SYSTEM_ENABLED,
 		"forgeSystemEnabled",
 		false

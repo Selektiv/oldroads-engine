@@ -7591,6 +7591,10 @@ void Player::setCleavePercent(int32_t value) {
 }
 
 int32_t Player::getPerfectShotDamage(uint8_t range, bool useCharges) const {
+	if (!g_configManager().getBoolean(PERFECT_SHOT_SYSTEM_ENABLED)) {
+		return 0;
+	}
+
 	int32_t result = 0;
 	auto it = perfectShot.find(range);
 	if (it != perfectShot.end()) {
