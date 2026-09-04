@@ -2749,6 +2749,25 @@ void ProtocolGame::parseSay(NetworkMessage &msg) {
 }
 
 void ProtocolGame::parseFightModes(NetworkMessage &msg) {
+	if (hasProtocolFeature(protocolProfile, ProtocolFeature::OldroadsClassicFightModes)) {
+		const uint8_t rawFightMode = msg.getByte();
+		const bool chaseMode = msg.getByte() != 0;
+		const bool secureMode = msg.getByte() != 0;
+		const auto pvpMode = ExpertPvp::modeFromClientByte(msg.getByte());
+
+		FightMode_t fightMode;
+		if (rawFightMode == 1) {
+			fightMode = FIGHTMODE_ATTACK;
+		} else if (rawFightMode == 2) {
+			fightMode = FIGHTMODE_BALANCED;
+		} else {
+			fightMode = FIGHTMODE_DEFENSE;
+		}
+
+		g_game().playerSetFightModes(player->getID(), fightMode, chaseMode, secureMode, pvpMode.mode);
+		return;
+	}
+
 	if (hasProtocolFeature(protocolProfile, ProtocolFeature::TacticsWithoutFightMode)) {
 		const bool chaseMode = msg.getByte() != 0;
 		const bool secureMode = msg.getByte() != 0;
@@ -8587,7 +8606,12 @@ void ProtocolGame::sendEnterWorld() {
 void ProtocolGame::sendFightModes() {
 	NetworkMessage msg;
 	msg.addByte(0xA7);
-	if (hasProtocolFeature(protocolProfile, ProtocolFeature::TacticsWithoutFightMode)) {
+	if (hasProtocolFeature(protocolProfile, ProtocolFeature::OldroadsClassicFightModes)) {
+		msg.addByte(player->fightMode);
+		msg.addByte(player->chaseMode);
+		msg.addByte(player->secureMode);
+		msg.addByte(ExpertPvp::isEnabled() ? player->getPvpMode() : PVP_MODE_DOVE);
+	} else if (hasProtocolFeature(protocolProfile, ProtocolFeature::TacticsWithoutFightMode)) {
 		msg.addByte(player->chaseMode);
 		msg.addByte(player->secureMode);
 		msg.addByte(PVP_MODE_DOVE);

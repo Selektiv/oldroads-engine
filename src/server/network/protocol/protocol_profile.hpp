@@ -83,6 +83,9 @@ enum class ProtocolFeature : uint64_t {
 	TacticsWithoutFightMode = 1ULL << 22,
 	// Tibia 11.00 confirmed: 0xA0 and 0xA7 include a fourth Expert PvP mode byte.
 	ExpertPvpModeByte = 1ULL << 23,
+	// Oldroads extension: 0xA0 and 0xA7 restore the classic fight-mode byte
+	// before chase, secure, and PvP modes for the paired Oldroads client.
+	OldroadsClassicFightModes = 1ULL << 24,
 };
 
 [[nodiscard]] constexpr ProtocolFeature operator|(ProtocolFeature left, ProtocolFeature right) {
