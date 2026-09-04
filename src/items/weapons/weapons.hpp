@@ -52,6 +52,12 @@ public:
 		FightMode_t fightMode,
 		int32_t roll
 	);
+	static int32_t getOldroadsDefense(
+		int32_t defenseSkill,
+		int32_t defenseValue,
+		FightMode_t fightMode,
+		int32_t roll
+	);
 	static int32_t getOldroadsDistanceHitChance(
 		int32_t distanceSkill,
 		int32_t itemHitChance,

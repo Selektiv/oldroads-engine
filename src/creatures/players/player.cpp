@@ -777,7 +777,20 @@ double Player::getCombatTacticsMitigation() const {
 	return fightFactor;
 }
 
-int32_t Player::getDefense(bool sendToClient /* = false*/) const {
+int32_t Player::getDefense(bool /* sendToClient */) const {
+	// Expose the deterministic ceiling for stats and scripting. Incoming hits
+	// use getDefenseReduction() to make their own two-roll defense attempt.
+	return calculateOldroadsDefense(99);
+}
+
+int32_t Player::getDefenseReduction() const {
+	const int32_t roll = (
+		uniform_random(0, 99) + uniform_random(0, 99)
+	) / 2;
+	return calculateOldroadsDefense(roll);
+}
+
+int32_t Player::calculateOldroadsDefense(int32_t roll) const {
 	int32_t defenseSkill = getSkillLevel(SKILL_FIST);
 	int32_t defenseValue = 7;
 	std::shared_ptr<Item> weapon;
@@ -785,43 +798,21 @@ int32_t Player::getDefense(bool sendToClient /* = false*/) const {
 	getShieldAndWeapon(shield, weapon);
 
 	if (weapon) {
-		defenseValue = weapon->getDefense() + weapon->getExtraDefense();
+		defenseValue = weapon->getDefense();
 		defenseSkill = getWeaponSkill(weapon);
 	}
 
 	if (shield) {
-		defenseValue = (weapon != nullptr)
-			? shield->getDefense() + weapon->getExtraDefense()
-			: shield->getDefense();
-		// Wheel of destiny - Combat Mastery
-		if (g_configManager().getBoolean(TOGGLE_WHEELSYSTEM) && shield->getDefense() > 0) {
-			defenseValue += wheel().getMajorStatConditional("Combat Mastery", WheelMajor_t::DEFENSE);
-		}
+		defenseValue = shield->getDefense();
 		defenseSkill = getSkillLevel(SKILL_SHIELD);
 	}
 
-	if (g_configManager().getBoolean(WEAPON_PROFICIENCY_ENABLED)) {
-		defenseValue += weaponProficiency().getStat(
-			WeaponProficiencyBonus_t::DEFENSE_BONUS
-		);
-		defenseValue += weaponProficiency().getStat(
-			WeaponProficiencyBonus_t::WEAPON_SHIELD_MODIFIER
-		);
-	}
-
-	if (defenseSkill == 0) {
-		switch (fightMode) {
-			case FIGHTMODE_ATTACK:
-			case FIGHTMODE_BALANCED:
-				return 1;
-			case FIGHTMODE_DEFENSE:
-				return 2;
-		}
-	}
-
-	auto defenseScalingFactor = shield ? 0.16f : (weapon && weapon->getDefense() > 0 ? 0.146f : 0.15f);
-
-	return ((defenseSkill / 4.0 + 2.23) * defenseValue * getDefenseFactor(sendToClient) * defenseScalingFactor) * vocation->defenseMultiplier;
+	return Weapons::getOldroadsDefense(
+		defenseSkill,
+		defenseValue,
+		fightMode,
+		roll
+	);
 }
 
 uint16_t Player::getDefenseEquipment() const {

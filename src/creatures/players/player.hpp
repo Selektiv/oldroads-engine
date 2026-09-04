@@ -880,6 +880,7 @@ public:
 
 	int32_t getArmor() const override;
 	int32_t getDefense(bool sendToClient = false) const override;
+	int32_t getDefenseReduction() const override;
 	float getAttackFactor() const override;
 	float getDefenseFactor(bool sendToClient) const override;
 	float getMitigation() const override;
@@ -1616,6 +1617,7 @@ private:
 	void setNextActionPushTask(const std::shared_ptr<Task> &task);
 	void setNextPotionActionTask(const std::shared_ptr<Task> &task);
 	void scheduleNextAttack(uint32_t delay);
+	int32_t calculateOldroadsDefense(int32_t roll) const;
 
 	void death(const std::shared_ptr<Creature> &lastHitCreature) override;
 	bool spawn();

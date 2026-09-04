@@ -964,8 +964,7 @@ BlockType_t Creature::blockHit(const std::shared_ptr<Creature> &attacker, const 
 		}
 
 		if (checkDefense && hasDefense && canUseDefense) {
-			int32_t defense = getDefense();
-			damage -= uniform_random(defense / 2, defense);
+			damage -= getDefenseReduction();
 			if (damage <= 0) {
 				damage = 0;
 				blockType = BLOCK_DEFENSE;
@@ -1006,6 +1005,13 @@ BlockType_t Creature::blockHit(const std::shared_ptr<Creature> &attacker, const 
 	}
 	onAttacked();
 	return blockType;
+}
+
+int32_t Creature::getDefenseReduction() const {
+	// Preserve Canary's existing monster defense roll. Players override this
+	// method with the Oldroads triangular defense distribution.
+	const int32_t defense = getDefense();
+	return uniform_random(defense / 2, defense);
 }
 
 bool Creature::setAttackedCreature(const std::shared_ptr<Creature> &creature) {

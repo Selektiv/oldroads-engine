@@ -492,6 +492,7 @@ public:
 	virtual int32_t getDefense(bool = false) const {
 		return 0;
 	}
+	virtual int32_t getDefenseReduction() const;
 	virtual float getAttackFactor() const {
 		return 1.0f;
 	}

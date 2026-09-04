@@ -128,10 +128,41 @@ int32_t Weapons::getOldroadsWeaponDamage(
 
 	const int64_t formula = static_cast<int64_t>(5 * attackSkill + 50) * adjustedAttack;
 
-	// Integer ceiling of (formula * roll) / 10000.
+	// Classic combat truncates the final result.
 	return static_cast<int32_t>(
-		(formula * roll + 9999) / 10000
+		(formula * roll) / 10000
 	);
+}
+
+int32_t Weapons::getOldroadsDefense(
+	int32_t defenseSkill,
+	int32_t defenseValue,
+	FightMode_t fightMode,
+	int32_t roll
+) {
+	defenseSkill = std::max<int32_t>(0, defenseSkill);
+	int32_t adjustedDefense = std::max<int32_t>(0, defenseValue);
+	roll = std::clamp(roll, 0, 99);
+
+	switch (fightMode) {
+		case FIGHTMODE_ATTACK:
+			// Full attack: 60% after classic integer adjustment.
+			adjustedDefense -= (4 * adjustedDefense) / 10;
+			break;
+
+		case FIGHTMODE_DEFENSE:
+			// Full defense: 180% after classic integer adjustment.
+			adjustedDefense += (8 * adjustedDefense) / 10;
+			break;
+
+		case FIGHTMODE_BALANCED:
+		default:
+			// Balanced: 100%.
+			break;
+	}
+
+	const int64_t formula = static_cast<int64_t>(5 * defenseSkill + 50) * adjustedDefense;
+	return static_cast<int32_t>((formula * roll) / 10000);
 }
 
 int32_t Weapons::getOldroadsDistanceHitChance(
