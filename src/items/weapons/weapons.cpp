@@ -134,6 +134,25 @@ int32_t Weapons::getOldroadsWeaponDamage(
 	);
 }
 
+int32_t Weapons::getOldroadsDistanceHitChance(
+	int32_t distanceSkill,
+	int32_t itemHitChance,
+	int32_t itemMaxHitChance,
+	int32_t launcherHitChance
+) {
+	// Oldroads accuracy improves with distance skill but never changes with
+	// target range. Equipment defines the ceiling and may add a launcher bonus.
+	distanceSkill = std::max<int32_t>(0, distanceSkill);
+	int32_t baseHitChance;
+	if (itemHitChance != 0) {
+		baseHitChance = itemHitChance;
+	} else {
+		baseHitChance = std::min(itemMaxHitChance, 50 + (distanceSkill / 2));
+	}
+
+	return std::clamp(baseHitChance + launcherHitChance, 0, 100);
+}
+
 Weapon::Weapon() = default;
 
 LuaScriptInterface* Weapon::getScriptInterface() const {
@@ -814,120 +833,38 @@ bool WeaponDistance::useWeapon(const std::shared_ptr<Player> &player, const std:
 		}
 	}
 
-	int32_t chance;
+	int32_t chance = 0;
 	if (damageX != 0 || damageY != 0) {
 		chance = 100;
 		perfectShot = true;
-	} else if (it.hitChance == 0) {
-		// hit chance is based on distance to target and distance skill
-		const uint32_t skill = player->getSkillLevel(SKILL_DISTANCE);
-		const uint32_t distance = std::max<uint32_t>(distanceX, distanceY);
-
-		uint32_t maxHitChance;
-		if (it.maxHitChance != -1) {
-			maxHitChance = it.maxHitChance;
-		} else if (it.ammoType != AMMO_NONE) {
-			// hit chance on two-handed weapons is limited to 90%
-			maxHitChance = 90;
-		} else {
-			// one-handed is set to 75%
-			maxHitChance = 75;
-		}
-
-		if (maxHitChance == 75) {
-			// chance for one-handed weapons
-			switch (distance) {
-				case 1:
-				case 5:
-					chance = std::min<uint32_t>(skill, 74) + 1;
-					break;
-				case 2:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 28) * 2.40f) + 8;
-					break;
-				case 3:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 45) * 1.55f) + 6;
-					break;
-				case 4:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 58) * 1.25f) + 3;
-					break;
-				case 6:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 90) * 0.80f) + 3;
-					break;
-				case 7:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 104) * 0.70f) + 2;
-					break;
-				default:
-					chance = it.hitChance;
-					break;
-			}
-		} else if (maxHitChance == 90) {
-			// formula for two-handed weapons
-			switch (distance) {
-				case 1:
-				case 5:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 74) * 1.20f) + 1;
-					break;
-				case 2:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 28) * 3.20f);
-					break;
-				case 3:
-					chance = std::min<uint32_t>(skill, 45) * 2;
-					break;
-				case 4:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 58) * 1.55f);
-					break;
-				case 6:
-				case 7:
-					chance = std::min<uint32_t>(skill, 90);
-					break;
-				default:
-					chance = it.hitChance;
-					break;
-			}
-		} else if (maxHitChance == 100) {
-			switch (distance) {
-				case 1:
-				case 5:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 73) * 1.35f) + 1;
-					break;
-				case 2:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 30) * 3.20f) + 4;
-					break;
-				case 3:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 48) * 2.05f) + 2;
-					break;
-				case 4:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 65) * 1.50f) + 2;
-					break;
-				case 6:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 87) * 1.20f) - 4;
-					break;
-				case 7:
-					chance = static_cast<uint32_t>(std::min<uint32_t>(skill, 90) * 1.10f) + 1;
-					break;
-				default:
-					chance = it.hitChance;
-					break;
-			}
-		} else {
-			chance = maxHitChance;
-		}
-	} else {
-		chance = it.hitChance;
 	}
 
+	int32_t launcherHitChance = 0;
 	if (!perfectShot && item->getWeaponType() == WEAPON_AMMO) {
 		const auto &bow = player->getWeapon(true);
 
 		if (bow && bow->getHitChance() != 0) {
-			chance += bow->getHitChance();
+			launcherHitChance = bow->getHitChance();
 
 			if (g_configManager().getBoolean(WEAPON_PROFICIENCY_ENABLED)) {
-				chance += player->weaponProficiency().getStat(
+				launcherHitChance += player->weaponProficiency().getStat(
 					WeaponProficiencyBonus_t::RANGED_HIT_CHANCE
 				);
 			}
 		}
+	}
+
+	if (!perfectShot) {
+		const int32_t maxHitChance = it.maxHitChance != -1
+			? it.maxHitChance
+			: (it.ammoType != AMMO_NONE ? 90 : 75);
+
+		chance = Weapons::getOldroadsDistanceHitChance(
+			player->getSkillLevel(SKILL_DISTANCE),
+			it.hitChance,
+			maxHitChance,
+			launcherHitChance
+		);
 	}
 
 	if (chance >= uniform_random(1, 100)) {

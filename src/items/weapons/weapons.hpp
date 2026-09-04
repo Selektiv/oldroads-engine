@@ -52,6 +52,12 @@ public:
 		FightMode_t fightMode,
 		int32_t roll
 	);
+	static int32_t getOldroadsDistanceHitChance(
+		int32_t distanceSkill,
+		int32_t itemHitChance,
+		int32_t itemMaxHitChance,
+		int32_t launcherHitChance = 0
+	);
 
 	bool registerLuaEvent(const WeaponShared_ptr &event, bool fromXML = false);
 	void clear(bool isFromXML = false);

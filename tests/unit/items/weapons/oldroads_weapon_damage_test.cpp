@@ -151,3 +151,21 @@ TEST(OldroadsWeaponDamageTest, DocumentsClassicFistDamageCeilings) {
 		)
 	);
 }
+
+TEST(OldroadsDistanceHitChanceTest, ScalesWithSkillUpToEquipmentCap) {
+	EXPECT_EQ(55, Weapons::getOldroadsDistanceHitChance(10, 0, 90));
+	EXPECT_EQ(70, Weapons::getOldroadsDistanceHitChance(40, 0, 90));
+	EXPECT_EQ(90, Weapons::getOldroadsDistanceHitChance(80, 0, 90));
+	EXPECT_EQ(90, Weapons::getOldroadsDistanceHitChance(100, 0, 90));
+	EXPECT_EQ(75, Weapons::getOldroadsDistanceHitChance(80, 0, 75));
+}
+
+TEST(OldroadsDistanceHitChanceTest, AppliesEquipmentOverridesAndClampsAccuracy) {
+	// Explicit hitChance is an absolute override for deliberately configured items.
+	EXPECT_EQ(95, Weapons::getOldroadsDistanceHitChance(10, 95, 90));
+
+	// Launchers may provide future equipment-based accuracy bonuses.
+	EXPECT_EQ(95, Weapons::getOldroadsDistanceHitChance(80, 0, 90, 5));
+	EXPECT_EQ(100, Weapons::getOldroadsDistanceHitChance(80, 0, 90, 20));
+	EXPECT_EQ(50, Weapons::getOldroadsDistanceHitChance(-10, 0, 90));
+}
