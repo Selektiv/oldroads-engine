@@ -29,6 +29,15 @@ Actions &Actions::getInstance() {
 	return inject<Actions>();
 }
 
+bool Actions::shouldRestartAttackSwing(const ItemType &itemType, uint16_t itemSubType, bool usedOnCreature) {
+	if (itemType.isRune() || itemType.type == ITEM_TYPE_POTION) {
+		return true;
+	}
+
+	return usedOnCreature && itemType.isFluidContainer()
+		&& (itemSubType == FLUID_MANA || itemSubType == FLUID_LIFE);
+}
+
 void Actions::clear() {
 	useItemMap.clear();
 	uniqueItemMap.clear();
@@ -399,6 +408,7 @@ ReturnValue Actions::internalUseItem(const std::shared_ptr<Player> &player, cons
 
 bool Actions::useItem(const std::shared_ptr<Player> &player, const Position &pos, uint8_t index, const std::shared_ptr<Item> &item, bool isHotkey) {
 	const ItemType &it = Item::items[item->getID()];
+	const bool restartAttackSwing = shouldRestartAttackSwing(it, item->getSubType(), false);
 	bool canTriggerExhaustion = it.triggerExhaustion();
 	if (canTriggerExhaustion) {
 		if (player->walkExhausted()) {
@@ -421,6 +431,9 @@ bool Actions::useItem(const std::shared_ptr<Player> &player, const Position &pos
 		player->setNextPotionAction(OTSYS_TIME() + g_configManager().getNumber(ACTIONS_DELAY_INTERVAL));
 	} else {
 		player->setNextAction(OTSYS_TIME() + g_configManager().getNumber(ACTIONS_DELAY_INTERVAL));
+	}
+	if (restartAttackSwing) {
+		player->restartAttackSwing();
 	}
 
 	// only send cooldown icon if it's an multi use item
@@ -457,14 +470,24 @@ bool Actions::useItemEx(const std::shared_ptr<Player> &player, const Position &f
 		showUseHotkeyMessage(player, item, player->getItemTypeCount(item->getID(), subType != item->getItemCount() ? subType : -1));
 	}
 
+	const auto target = action->getTarget(player, creature, toPos, toStackPos);
+	const bool restartAttackSwing = shouldRestartAttackSwing(
+		it,
+		item->getSubType(),
+		std::dynamic_pointer_cast<Creature>(target) != nullptr
+	);
+
 	if (action->useFunction) {
-		if (action->useFunction(player, item, fromPos, action->getTarget(player, creature, toPos, toStackPos), toPos, isHotkey)) {
+		if (action->useFunction(player, item, fromPos, target, toPos, isHotkey)) {
+			if (restartAttackSwing) {
+				player->restartAttackSwing();
+			}
 			return true;
 		}
 		return false;
 	}
 
-	if (!action->executeUse(player, item, fromPos, action->getTarget(player, creature, toPos, toStackPos), toPos, isHotkey)) {
+	if (!action->executeUse(player, item, fromPos, target, toPos, isHotkey)) {
 		if (!action->hasOwnErrorHandler()) {
 			player->sendCancelMessage(RETURNVALUE_CANNOTUSETHISOBJECT);
 		}
@@ -475,6 +498,9 @@ bool Actions::useItemEx(const std::shared_ptr<Player> &player, const Position &f
 		player->setNextPotionAction(OTSYS_TIME() + g_configManager().getNumber(EX_ACTIONS_DELAY_INTERVAL));
 	} else {
 		player->setNextAction(OTSYS_TIME() + g_configManager().getNumber(EX_ACTIONS_DELAY_INTERVAL));
+	}
+	if (restartAttackSwing) {
+		player->restartAttackSwing();
 	}
 
 	if (it.isMultiUse()) {

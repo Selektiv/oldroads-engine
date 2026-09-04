@@ -840,6 +840,7 @@ public:
 	bool checkLastAttackWithin(uint32_t interval) const;
 
 	void updateLastAttack();
+	void restartAttackSwing();
 
 	uint64_t getLastAggressiveAction() const;
 
@@ -1614,6 +1615,7 @@ private:
 	void setNextActionTask(const std::shared_ptr<Task> &task, bool resetIdleTime = true);
 	void setNextActionPushTask(const std::shared_ptr<Task> &task);
 	void setNextPotionActionTask(const std::shared_ptr<Task> &task);
+	void scheduleNextAttack(uint32_t delay);
 
 	void death(const std::shared_ptr<Creature> &lastHitCreature) override;
 	bool spawn();
@@ -1726,6 +1728,7 @@ private:
 	uint64_t experience = 0;
 	uint64_t manaSpent = 0;
 	uint64_t lastAttack = 0;
+	uint64_t attackTaskGeneration = 0;
 	std::unordered_map<uint8_t, uint64_t> lastConditionTime;
 	uint64_t lastAggressiveAction = 0;
 	uint64_t bankBalance = 0;
@@ -1793,6 +1796,7 @@ private:
 	uint32_t actionTaskEvent = 0;
 	uint32_t actionTaskEventPush = 0;
 	uint32_t actionPotionTaskEvent = 0;
+	uint32_t attackTaskEvent = 0;
 	uint32_t nextStepEvent = 0;
 	uint32_t walkTaskEvent = 0;
 	uint32_t MessageBufferTicks = 0;

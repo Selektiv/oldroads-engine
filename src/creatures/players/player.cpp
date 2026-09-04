@@ -1197,6 +1197,21 @@ void Player::updateLastAttack() {
 	lastAttack = OTSYS_TIME();
 }
 
+void Player::restartAttackSwing() {
+	lastAttack = OTSYS_TIME();
+
+	if (getAttackedCreature()) {
+		scheduleNextAttack(getAttackSpeed());
+		return;
+	}
+
+	if (attackTaskEvent != 0) {
+		g_dispatcher().stopEvent(attackTaskEvent);
+		attackTaskEvent = 0;
+	}
+	++attackTaskGeneration;
+}
+
 uint64_t Player::getLastAggressiveAction() const {
 	return lastAggressiveAction;
 }
@@ -3092,6 +3107,46 @@ void Player::setNextPotionActionTask(const std::shared_ptr<Task> &task) {
 	}
 }
 
+void Player::scheduleNextAttack(uint32_t delay) {
+	if (!g_configManager().getBoolean(CLASSIC_ATTACK_SPEED)) {
+		if (attackTaskEvent != 0) {
+			g_dispatcher().stopEvent(attackTaskEvent);
+			attackTaskEvent = 0;
+		}
+		++attackTaskGeneration;
+
+		const auto task = createPlayerTask(
+			std::max<uint32_t>(SCHEDULER_MINTICKS, delay), [self = std::weak_ptr<Creature>(getCreature())] {
+				if (const auto &creature = self.lock()) {
+					creature->checkCreatureAttack(true);
+				}
+			}, __FUNCTION__
+		);
+		task->setLane(DispatcherLane::PlayerAction);
+		task->setProducerToken(getID());
+		setNextActionTask(task, false);
+		return;
+	}
+
+	if (attackTaskEvent != 0) {
+		g_dispatcher().stopEvent(attackTaskEvent);
+		attackTaskEvent = 0;
+	}
+
+	const uint64_t generation = ++attackTaskGeneration;
+	const auto task = createPlayerTask(
+		std::max<uint32_t>(SCHEDULER_MINTICKS, delay), [self = std::weak_ptr<Player>(static_self_cast<Player>()), generation] {
+			if (const auto &player = self.lock(); player && player->attackTaskGeneration == generation) {
+				player->attackTaskEvent = 0;
+				player->checkCreatureAttack(true);
+			}
+		}, __FUNCTION__
+	);
+	task->setLane(DispatcherLane::PlayerAction);
+	task->setProducerToken(getID());
+	attackTaskEvent = g_dispatcher().scheduleEvent(task);
+}
+
 void Player::setModuleDelay(uint8_t byteortype, int16_t delay) {
 	moduleDelayMap[byteortype] = OTSYS_TIME() + delay;
 }
@@ -4011,47 +4066,38 @@ void Player::doAttacking(uint32_t interval) {
 		return;
 	}
 
-	if ((OTSYS_TIME() - lastAttack) >= getAttackSpeed()) {
-		bool result = false;
+	const uint64_t elapsed = OTSYS_TIME() - lastAttack;
+	if (elapsed < getAttackSpeed()) {
+		scheduleNextAttack(getAttackSpeed() - static_cast<uint32_t>(elapsed));
+		return;
+	}
 
-		const auto &tool = getWeapon();
-		const auto &weapon = g_weapons().getWeapon(tool);
-		uint32_t delay = getAttackSpeed();
-		bool classicSpeed = g_configManager().getBoolean(CLASSIC_ATTACK_SPEED);
+	bool result = false;
 
-		if (weapon) {
-			if (!weapon->interruptSwing()) {
-				result = weapon->useWeapon(static_self_cast<Player>(), tool, attackedCreature);
-			} else if (!classicSpeed && !canDoAction()) {
-				delay = getNextActionTime();
-			} else {
-				result = weapon->useWeapon(static_self_cast<Player>(), tool, attackedCreature);
-			}
-		} else if (hasWeaponDistanceEquipped()) {
-			return;
+	const auto &tool = getWeapon();
+	const auto &weapon = g_weapons().getWeapon(tool);
+	uint32_t delay = getAttackSpeed();
+	bool classicSpeed = g_configManager().getBoolean(CLASSIC_ATTACK_SPEED);
+
+	if (weapon) {
+		if (!weapon->interruptSwing()) {
+			result = weapon->useWeapon(static_self_cast<Player>(), tool, attackedCreature);
+		} else if (!classicSpeed && !canDoAction()) {
+			delay = getNextActionTime();
 		} else {
-			result = Weapon::useFist(static_self_cast<Player>(), attackedCreature);
+			result = weapon->useWeapon(static_self_cast<Player>(), tool, attackedCreature);
 		}
+	} else if (hasWeaponDistanceEquipped()) {
+		return;
+	} else {
+		result = Weapon::useFist(static_self_cast<Player>(), attackedCreature);
+	}
 
-		const auto &task = createPlayerTask(
-			std::max<uint32_t>(SCHEDULER_MINTICKS, delay), [self = std::weak_ptr<Creature>(getCreature())] {
-				if (const auto &creature = self.lock()) {
-					creature->checkCreatureAttack(true);
-				} }, __FUNCTION__
-		);
-		task->setLane(DispatcherLane::PlayerAction);
-		task->setProducerToken(getID());
+	scheduleNextAttack(delay);
 
-		if (!classicSpeed) {
-			setNextActionTask(task, false);
-		} else {
-			g_dispatcher().scheduleEvent(task);
-		}
-
-		if (result) {
-			updateLastAggressiveAction();
-			updateLastAttack();
-		}
+	if (result) {
+		updateLastAggressiveAction();
+		updateLastAttack();
 	}
 }
 

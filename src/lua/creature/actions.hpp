@@ -15,6 +15,7 @@ class Action;
 class LuaScriptInterface;
 class Player;
 class Item;
+class ItemType;
 class Creature;
 class Thing;
 
@@ -152,6 +153,7 @@ public:
 
 	bool useItem(const std::shared_ptr<Player> &player, const Position &pos, uint8_t index, const std::shared_ptr<Item> &item, bool isHotkey);
 	bool useItemEx(const std::shared_ptr<Player> &player, const Position &fromPos, const Position &toPos, uint8_t toStackPos, const std::shared_ptr<Item> &item, bool isHotkey, const std::shared_ptr<Creature> &creature = nullptr);
+	static bool shouldRestartAttackSwing(const ItemType &itemType, uint16_t itemSubType, bool usedOnCreature);
 
 	ReturnValue canUse(const std::shared_ptr<Player> &player, const Position &pos) const;
 	ReturnValue canUse(const std::shared_ptr<Player> &player, const Position &pos, const std::shared_ptr<Item> &item);
