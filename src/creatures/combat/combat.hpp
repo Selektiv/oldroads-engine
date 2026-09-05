@@ -220,6 +220,12 @@ public:
 	CallBack* getCallback(CallBackParam_t key) const;
 
 	bool setParam(CombatParam_t param, uint32_t value);
+	[[nodiscard]] bool isBlockedByShield() const {
+		return params.blockedByShield;
+	}
+	[[nodiscard]] bool isBlockedByArmor() const {
+		return params.blockedByArmor;
+	}
 	void setArea(std::unique_ptr<AreaCombat> &newArea);
 	bool hasArea() const;
 	void addCondition(const std::shared_ptr<Condition> &condition);

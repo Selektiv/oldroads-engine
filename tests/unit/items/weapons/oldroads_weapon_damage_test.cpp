@@ -10,21 +10,21 @@ TEST(OldroadsWeaponDamageTest, AppliesFightModeModifiers) {
 	constexpr int32_t maximumRoll = 99;
 
 	EXPECT_EQ(
-		60,
+		59,
 		Weapons::getOldroadsWeaponDamage(
 			skill, attack, FIGHTMODE_ATTACK, maximumRoll
 		)
 	);
 
 	EXPECT_EQ(
-		50,
+		49,
 		Weapons::getOldroadsWeaponDamage(
 			skill, attack, FIGHTMODE_BALANCED, maximumRoll
 		)
 	);
 
 	EXPECT_EQ(
-		30,
+		29,
 		Weapons::getOldroadsWeaponDamage(
 			skill, attack, FIGHTMODE_DEFENSE, maximumRoll
 		)
@@ -50,7 +50,7 @@ TEST(OldroadsWeaponDamageTest, UsesExplicitDamageRoll) {
 	);
 
 	EXPECT_EQ(
-		50,
+		49,
 		Weapons::getOldroadsWeaponDamage(
 			skill, attack, FIGHTMODE_BALANCED, 99
 		)
@@ -74,7 +74,7 @@ EXPECT_EQ(
 	);
 
 	EXPECT_EQ(
-		50,
+		49,
 		Weapons::getOldroadsWeaponDamage(
 			30, 25, FIGHTMODE_BALANCED, 500
 		)
@@ -86,7 +86,7 @@ TEST(OldroadsWeaponDamageTest, DocumentsClassicArrowDamageCeilings) {
 	constexpr int32_t maximumRoll = 99;
 
 	EXPECT_EQ(
-		134,
+		133,
 		Weapons::getOldroadsWeaponDamage(
 			distanceSkill,
 			arrowAttack,
@@ -96,7 +96,7 @@ TEST(OldroadsWeaponDamageTest, DocumentsClassicArrowDamageCeilings) {
 	);
 
 	EXPECT_EQ(
-		112,
+		111,
 		Weapons::getOldroadsWeaponDamage(
 			distanceSkill,
 			arrowAttack,
@@ -106,7 +106,7 @@ TEST(OldroadsWeaponDamageTest, DocumentsClassicArrowDamageCeilings) {
 	);
 
 	EXPECT_EQ(
-		67,
+		66,
 		Weapons::getOldroadsWeaponDamage(
 			distanceSkill,
 			arrowAttack,
@@ -122,7 +122,7 @@ TEST(OldroadsWeaponDamageTest, DocumentsClassicFistDamageCeilings) {
 	constexpr int32_t maximumRoll = 99;
 
 	EXPECT_EQ(
-		8,
+		7,
 		Weapons::getOldroadsWeaponDamage(
 			fistSkill,
 			fistAttack,
@@ -132,7 +132,7 @@ TEST(OldroadsWeaponDamageTest, DocumentsClassicFistDamageCeilings) {
 	);
 
 	EXPECT_EQ(
-		7,
+		6,
 		Weapons::getOldroadsWeaponDamage(
 			fistSkill,
 			fistAttack,
@@ -142,13 +142,55 @@ TEST(OldroadsWeaponDamageTest, DocumentsClassicFistDamageCeilings) {
 	);
 
 	EXPECT_EQ(
-		5,
+		4,
 		Weapons::getOldroadsWeaponDamage(
 			fistSkill,
 			fistAttack,
 			FIGHTMODE_DEFENSE,
 			maximumRoll
 		)
+	);
+}
+
+TEST(OldroadsDefenseTest, AppliesClassicFightModeModifiers) {
+	constexpr int32_t shieldingSkill = 80;
+	constexpr int32_t shieldDefense = 37;
+	constexpr int32_t maximumRoll = 99;
+
+	EXPECT_EQ(102, Weapons::getOldroadsDefense(shieldingSkill, shieldDefense, FIGHTMODE_ATTACK, maximumRoll));
+	EXPECT_EQ(164, Weapons::getOldroadsDefense(shieldingSkill, shieldDefense, FIGHTMODE_BALANCED, maximumRoll));
+	EXPECT_EQ(294, Weapons::getOldroadsDefense(shieldingSkill, shieldDefense, FIGHTMODE_DEFENSE, maximumRoll));
+}
+
+TEST(OldroadsDefenseTest, UsesExplicitDefenseRoll) {
+	constexpr int32_t shieldingSkill = 80;
+	constexpr int32_t shieldDefense = 37;
+
+	EXPECT_EQ(0, Weapons::getOldroadsDefense(shieldingSkill, shieldDefense, FIGHTMODE_BALANCED, 0));
+	EXPECT_EQ(83, Weapons::getOldroadsDefense(shieldingSkill, shieldDefense, FIGHTMODE_BALANCED, 50));
+	EXPECT_EQ(164, Weapons::getOldroadsDefense(shieldingSkill, shieldDefense, FIGHTMODE_BALANCED, 99));
+}
+
+TEST(OldroadsDefenseTest, UsesClassicIntegerStanceRounding) {
+	constexpr int32_t shieldingSkill = 80;
+	constexpr int32_t maximumRoll = 99;
+
+	// Both values become 21 on full attack: 34 - 13 and 35 - 14.
+	EXPECT_EQ(
+		Weapons::getOldroadsDefense(shieldingSkill, 34, FIGHTMODE_ATTACK, maximumRoll),
+		Weapons::getOldroadsDefense(shieldingSkill, 35, FIGHTMODE_ATTACK, maximumRoll)
+	);
+}
+
+TEST(OldroadsDefenseTest, ClampsInvalidInputs) {
+	EXPECT_EQ(
+		Weapons::getOldroadsDefense(0, 37, FIGHTMODE_BALANCED, 99),
+		Weapons::getOldroadsDefense(-10, 37, FIGHTMODE_BALANCED, 99)
+	);
+	EXPECT_EQ(0, Weapons::getOldroadsDefense(80, -37, FIGHTMODE_BALANCED, 99));
+	EXPECT_EQ(
+		Weapons::getOldroadsDefense(80, 37, FIGHTMODE_BALANCED, 99),
+		Weapons::getOldroadsDefense(80, 37, FIGHTMODE_BALANCED, 500)
 	);
 }
 

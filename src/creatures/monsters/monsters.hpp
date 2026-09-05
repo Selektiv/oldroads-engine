@@ -225,6 +225,8 @@ public:
 	bool needDirection = false;
 	bool combatSpell = false;
 	bool isMelee = false;
+	// Opt-in defense eligibility for declarative name = "combat" attacks.
+	bool blockShield = false;
 
 	Outfit_t outfit = {};
 	std::string outfitMonster;

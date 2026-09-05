@@ -117,6 +117,7 @@ bool Monsters::deserializeSpell(const std::shared_ptr<MonsterSpell> &spell, spel
 		combatPtr->setParam(COMBAT_PARAM_BLOCKSHIELD, 1);
 		combatPtr->setOrigin(ORIGIN_MELEE);
 	} else if (spellName == "combat") {
+		combatPtr->setParam(COMBAT_PARAM_BLOCKSHIELD, spell->blockShield);
 		if (spell->combatType == COMBAT_PHYSICALDAMAGE) {
 			combatPtr->setParam(COMBAT_PARAM_BLOCKARMOR, 1);
 			combatPtr->setOrigin(ORIGIN_RANGED);

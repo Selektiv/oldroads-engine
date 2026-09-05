@@ -43,3 +43,10 @@ The global Git, commit, PR, C++ header, exception, and documentation policies ap
 
 - For quickstart changes, read `docs/docker/quickstart-for-beginners.md` and `docker/DOCKER.md`; keep CI/build, development, and user quickstart responsibilities separate.
 - The default client path is `login-server` at `http://localhost:8088/login`, never MyAAC `login.php`. MyAAC remains website/admin-only, uses `slawkens/myaac` `develop`, and keeps `http://localhost:8080`; public config stays `CANARY_*`, and the quickstart uses the published Canary runtime image.
+
+## Monster attack blocking
+
+- Declare defense eligibility per `name = "combat"` attack with `blockShield`;
+  do not infer it globally from physical damage or a projectile effect.
+- Preserve omitted-field behavior and explicit false through Lua forwarding.
+  Validate the reader and deserialized combat flags when changing this path.

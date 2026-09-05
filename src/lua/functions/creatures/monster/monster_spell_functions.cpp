@@ -22,6 +22,7 @@ void MonsterSpellFunctions::init(lua_State* L) {
 	Lua::registerMethod(L, "MonsterSpell", "setRange", MonsterSpellFunctions::luaMonsterSpellSetRange);
 	Lua::registerMethod(L, "MonsterSpell", "setCombatValue", MonsterSpellFunctions::luaMonsterSpellSetCombatValue);
 	Lua::registerMethod(L, "MonsterSpell", "setCombatType", MonsterSpellFunctions::luaMonsterSpellSetCombatType);
+	Lua::registerMethod(L, "MonsterSpell", "setBlockShield", MonsterSpellFunctions::luaMonsterSpellSetBlockShield);
 	Lua::registerMethod(L, "MonsterSpell", "setAttackValue", MonsterSpellFunctions::luaMonsterSpellSetAttackValue);
 	Lua::registerMethod(L, "MonsterSpell", "setNeedTarget", MonsterSpellFunctions::luaMonsterSpellSetNeedTarget);
 	Lua::registerMethod(L, "MonsterSpell", "setCombatLength", MonsterSpellFunctions::luaMonsterSpellSetCombatLength);
@@ -124,6 +125,18 @@ int MonsterSpellFunctions::luaMonsterSpellSetCombatType(lua_State* L) {
 	const auto &spell = Lua::getUserdataShared<MonsterSpell>(L, 1, "MonsterSpell");
 	if (spell) {
 		spell->combatType = Lua::getNumber<CombatType_t>(L, 2);
+		Lua::pushBoolean(L, true);
+	} else {
+		lua_pushnil(L);
+	}
+	return 1;
+}
+
+int MonsterSpellFunctions::luaMonsterSpellSetBlockShield(lua_State* L) {
+	// monsterSpell:setBlockShield(bool) -- declarative name = "combat" attacks
+	const auto &spell = Lua::getUserdataShared<MonsterSpell>(L, 1, "MonsterSpell");
+	if (spell) {
+		spell->blockShield = Lua::getBoolean(L, 2);
 		Lua::pushBoolean(L, true);
 	} else {
 		lua_pushnil(L);

@@ -22,6 +22,7 @@ private:
 	static int luaMonsterSpellSetRange(lua_State* L);
 	static int luaMonsterSpellSetCombatValue(lua_State* L);
 	static int luaMonsterSpellSetCombatType(lua_State* L);
+	static int luaMonsterSpellSetBlockShield(lua_State* L);
 	static int luaMonsterSpellSetAttackValue(lua_State* L);
 	static int luaMonsterSpellSetNeedTarget(lua_State* L);
 	static int luaMonsterSpellSetCombatLength(lua_State* L);

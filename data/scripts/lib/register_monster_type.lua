@@ -836,6 +836,9 @@ function readSpell(incomingLua, mtype)
 			end
 		else
 			spell:setType(incomingLua.name)
+			if incomingLua.name == "combat" and incomingLua.blockShield ~= nil then
+				spell:setBlockShield(incomingLua.blockShield)
+			end
 			if incomingLua.type then
 				if incomingLua.name == "combat" then
 					spell:setCombatType(incomingLua.type)
