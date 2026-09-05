@@ -958,12 +958,14 @@ BlockType_t Creature::blockHit(const std::shared_ptr<Creature> &attacker, const 
 	} else if (checkDefense || checkArmor) {
 		bool hasDefense = false;
 
-		if (blockCount > 0) {
+		// Only an attack that can actually use defense consumes one of the
+		// creature's stored defense opportunities. Armor is independent.
+		if (checkDefense && canUseDefense && blockCount > 0) {
 			--blockCount;
 			hasDefense = true;
 		}
 
-		if (checkDefense && hasDefense && canUseDefense) {
+		if (hasDefense) {
 			damage -= getDefenseReduction();
 			if (damage <= 0) {
 				damage = 0;
@@ -986,7 +988,9 @@ BlockType_t Creature::blockHit(const std::shared_ptr<Creature> &attacker, const 
 			}
 		}
 
-		if (hasDefense && blockType != BLOCK_NONE) {
+		// Shield training is eligible only when defense completely stops the
+		// hit. An armor block or a penetrating defense attempt does not count.
+		if (hasDefense && blockType == BLOCK_DEFENSE) {
 			onBlockHit();
 		}
 	}
